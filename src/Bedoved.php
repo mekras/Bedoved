@@ -99,9 +99,8 @@ class Bedoved
 		// Немного косметики
 		ini_set('html_errors', 0);
 
-		ob_start(array('Bedoved', 'fatalErrorHandler'), 4096);
-
 		self::$fatalErrorHandler = $callback;
+		ob_start(array('Bedoved', 'fatalErrorHandler'), 4096);
 
 		return true;
 	}
