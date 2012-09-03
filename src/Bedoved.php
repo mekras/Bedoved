@@ -33,7 +33,7 @@
 class Bedoved
 {
 	/**
-	 * Резервный буфер для отлова ошибок переполнения памяти (в Кб)
+	 * Резервный буфер для работы в условиях переполнения памяти (в Кб)
 	 *
 	 * @var int
 	 */
@@ -47,9 +47,34 @@ class Bedoved
 	private static $errorConversionMask = null;
 
 	/**
+	 * Состояние перехвата исключительных ситуаций
+	 * @var bool
+	 */
+	private static $enableExceptionHandling = false;
+
+	/**
+	 * Состояние перехвата фатальных ошибок
+	 * @var bool
+	 */
+	private static $enableFatalErrorHandling = false;
+
+	/**
+	 * Адреса e-mail для отправки извещений об ошибках
+	 * @var null|string
+	 */
+	private static $notify = null;
+
+	/**
+	 * Путь к файлу с сообщением об ошибке
+	 *
+	 * @var null|string
+	 */
+	private static $messageFile = null;
+
+	/**
 	 * Обработчик фатальных ошибок
 	 *
-	 * @var callback
+	 * @var callable
 	 */
 	private static $fatalErrorHandler = null;
 
@@ -64,34 +89,62 @@ class Bedoved
 	{
 		if (null === $mask)
 		{
-			$mask = E_ALL ^ (E_STRICT | E_NOTICE | E_USER_NOTICE);
+			$mask = E_ALL ^ (E_NOTICE | E_USER_NOTICE);
+			if (version_compare(PHP_VERSION, '5.4', '>='))
+			{
+				$mask = $mask ^ E_STRICT;
+			}
 		}
 		self::$errorConversionMask = $mask;
 		set_error_handler(array('Bedoved', 'errorHandler'));
 	}
 
 	/**
-	 * Устанавливает обработчик фатальных ошибок
+	 * Включает перехват исключительных ситуаций
+	 *
+	 * Вы можете указать файл, который надо вывести при возникновении такой ситуации, с помощью
+	 * метода {@link setMessageFile()}.
+	 */
+	public static function enableExceptionHandling()
+	{
+		if (self::$enableExceptionHandling)
+		{
+			return;
+		}
+
+		self::$enableExceptionHandling = true;
+
+		set_exception_handler(array(__CLASS__, 'exceptionHandler'));
+	}
+
+	/**
+	 * Включает перехват фатальных ошибок
 	 *
 	 * Этот метод:
 	 * 1. резервирует в памяти буфер, освобождаемый для обработки ошибок нехватки памяти;
 	 * 2. отключает HTML-оформление стандартных сообщений об ошибках;
 	 *
-	 * @param callback $callback  обработчик фатальных ошибок
-	 *
-	 * @return boolean
+	 * @return boolean  true, если перехват включен и false если не удалось это сделать
 	 */
-	public static function setFatalErrorHandler($callback)
+	public static function enableFatalErrorHandling()
 	{
+		if (self::$enableFatalErrorHandling)
+		{
+			return true;
+		}
+
+		if (PHP_SAPI == 'cli')
+		{
+			return false;
+		}
+
+		self::$enableFatalErrorHandling = true;
+
 		/*
 		 * В PHP нет стандартных методов для перехвата некоторых типов ошибок (например E_PARSE или
 		 * E_ERROR), однако способ всё же есть — зарегистрировать функцию через ob_start.
 		 * Но только не в режиме CLI.
 		 */
-		if (PHP_SAPI == 'cli' || !is_callable($callback))
-		{
-			return false;
-		}
 		// Резервируем буфер на случай переполнения памяти
 		$GLOBALS['BEDOVED_MEMORY_OVERFLOW_BUFFER'] =
 			str_repeat('x', self::MEMORY_OVERFLOW_BUFFER_SIZE * 1024);
@@ -99,10 +152,63 @@ class Bedoved
 		// Немного косметики
 		ini_set('html_errors', 0);
 
-		self::$fatalErrorHandler = $callback;
-		ob_start(array('Bedoved', 'fatalErrorHandler'), 4096);
+		ob_start(array(__CLASS__, 'fatalErrorHandler'), 4096);
 
 		return true;
+	}
+
+	/**
+	 * Задаёт адрес (или адреса через запятую) куда будут отправляться сообщения об ошибках
+	 *
+	 * @param string $emails
+	 */
+	public static function setNotifyEmails($emails)
+	{
+		assert('is_string($emails)');
+
+		self::$notify = $emails;
+	}
+
+	/**
+	 * Задаёт путь к файлу, содержимое которого должно быть отправлено клиенту в случае ошибки
+	 *
+	 * Если файл не существует, будет сделано предупреждение E_USER_WARNING.
+	 *
+	 * @param string $filename  путь к файлу
+	 */
+	public static function setMessageFile($filename)
+	{
+		assert('is_string($filename)');
+
+		$path = realpath($filename);
+		if ($path)
+		{
+			self::$messageFile = $filename;
+		}
+		else
+		{
+			trigger_error('File not found: ' . $filename, E_USER_WARNING);
+		}
+	}
+
+	/**
+	 * Устанавливает обработчик фатальных ошибок
+	 *
+	 * Автоматически вызывает метод {@link enableFatalErrorHandling()}.
+	 *
+	 * @param callable $callback  обработчик фатальных ошибок
+	 *
+	 * @return boolean  true в случае успешного выполнения и false в случае ошибки
+	 */
+	public static function setFatalErrorHandler($callback)
+	{
+		if (!is_callable($callback))
+		{
+			return false;
+		}
+
+		self::$fatalErrorHandler = $callback;
+		return self::enableFatalErrorHandling();
 	}
 
 	/**
@@ -134,7 +240,6 @@ class Bedoved
 
 		throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
 	}
-	//-----------------------------------------------------------------------------
 
 	/**
 	 * Обработчик фатальных ошибок
@@ -172,13 +277,90 @@ class Bedoved
 			$errstr = trim($m[2]);
 			$errfile = trim($m[3]);
 			$errline = trim($m[4]);
-			return call_user_func(self::$fatalErrorHandler, $errtype, $errstr, $errfile, $errline,
-				$output);
+			if (self::$fatalErrorHandler)
+			{
+				return call_user_func(self::$fatalErrorHandler, $errtype, $errstr, $errfile, $errline,
+					$output);
+			}
+			else
+			{
+				$e = new ErrorException($errstr, 0, strcasecmp($errtype, 'parse') == 0 ? E_PARSE : E_ERROR,
+					$errfile, $errline);
+				return self::exceptionHandler($e, true);
+			}
 		}
 		$GLOBALS['BEDOVED_MEMORY_OVERFLOW_BUFFER'] =
 			str_repeat('x', self::MEMORY_OVERFLOW_BUFFER_SIZE * 1024);
 
 		// возвращаем false для вывода буфера
 		return false;
+	}
+
+	/**
+	 * Обработчик исключений
+	 *
+	 * @param Exception $e
+	 * @param bool      $return  true чтобы вернуть сообщение вместо вывода
+	 *
+	 * @return void|string
+	 */
+	public static function exceptionHandler(Exception $e, $return = false)
+	{
+		/*
+		 * Сообщение для администратора
+		 */
+
+		$message = sprintf(
+			"%s\n\n%s in %s at %s\n\nBacktrace/context:\n%s\n",
+			$e->getMessage(),
+			get_class($e),
+			$e->getFile(),
+			$e->getLine(),
+			$e->getTraceAsString()
+		);
+
+		// Отправляем в журнал
+		error_log($message);
+
+		/* Отправляем по e-mail */
+		if (self::$notify)
+		{
+			$subject = 'Crash on ';
+			$subject .= isset($_SERVER['HTTP_HOST'])
+				? substr($_SERVER['HTTP_HOST'], 0, 4) == 'www.'
+					? substr($_SERVER['HTTP_HOST'], 4)
+					: $_SERVER['HTTP_HOST']
+				: php_uname('n');
+			mail(self::$notify, $subject, $message);
+		}
+
+		/*
+		 * Сообщение для пользователя
+		 */
+
+		$httpError = 'Internal Server Error';
+		if (!headers_sent())
+		{
+			header($httpError, true, 500);
+		}
+
+		$message = false;
+		if (@file_exists(self::$messageFile) && @is_readable(self::$messageFile))
+		{
+			@$message = file_get_contents(self::$messageFile);
+		}
+
+		if (!$message)
+		{
+			$message = "<!doctype html>\n<html><head><title>$httpError</title></head>\n" .
+				"<body><h1>$httpError</h1></body></html>";
+		}
+
+		if ($return)
+		{
+			return $message;
+		}
+		echo $message;
+		return null;
 	}
 }
