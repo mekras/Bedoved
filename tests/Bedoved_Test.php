@@ -28,81 +28,92 @@ require_once __DIR__ . '/../src/Bedoved.php';
 
 class Bedoved_Test extends PHPUnit_Framework_TestCase
 {
-	protected function tearDown()
-	{
-		restore_error_handler();
-	}
+    protected function tearDown()
+    {
+        restore_error_handler();
+    }
 
-	/**
-	 * @covers Bedoved::enableErrorConversion
-	 */
-	public function test_enableErrorConversion()
-	{
-		$mask = new ReflectionProperty('Bedoved', 'errorConversionMask');
-		$mask->setAccessible(true);
+    /**
+     * @covers Bedoved::enableErrorConversion
+     */
+    public function testEnableErrorConversion()
+    {
+        $mask = new ReflectionProperty('Bedoved', 'errorConversionMask');
+        $mask->setAccessible(true);
 
-		Bedoved::enableErrorConversion();
-		$this->assertGreaterThan(0, $mask->getValue('Bedoved'));
+        $b = new Bedoved();
+        $b->enableErrorConversion();
+        $this->assertGreaterThan(0, $mask->getValue($b));
 
-		Bedoved::enableErrorConversion(E_ERROR | E_USER_ERROR);
-		$this->assertEquals(E_ERROR | E_USER_ERROR, $mask->getValue('Bedoved'));
-	}
+        $b->enableErrorConversion(E_ERROR | E_USER_ERROR);
+        $this->assertEquals(E_ERROR | E_USER_ERROR, $mask->getValue($b));
+    }
 
-	/**
-	 * @covers Bedoved::errorHandler
-	 */
-	public function test_errorHandler()
-	{
-		Bedoved::enableErrorConversion(E_ERROR);
-		try
-		{
-			Bedoved::errorHandler(E_ERROR, 'Foo', 'bar.php', 123);
-		}
-		catch (ErrorException $e)
-		{
-			$this->assertEquals(E_ERROR, $e->getSeverity());
-			$this->assertEquals('Foo', $e->getMessage());
-			$this->assertEquals('bar.php', $e->getFile());
-			$this->assertEquals(123, $e->getLine());
-			return;
-		}
-		$this->fail('Expecting ErrorException.');
-	}
+    /**
+     * @covers Bedoved::errorHandler
+     */
+    public function testErrorHandler()
+    {
+        $b = new Bedoved();
+        $b->enableErrorConversion(E_ERROR);
+        try
+        {
+            $b->errorHandler(E_ERROR, 'Foo', 'bar.php', 123);
+        }
+        catch (ErrorException $e)
+        {
+            $this->assertEquals(E_ERROR, $e->getSeverity());
+            $this->assertEquals('Foo', $e->getMessage());
+            $this->assertEquals('bar.php', $e->getFile());
+            $this->assertEquals(123, $e->getLine());
+            return;
+        }
+        $this->fail('Expecting ErrorException.');
+    }
 
-	/**
-	 * @covers Bedoved::errorHandler
-	 */
-	public function test_errorHandler_at_escaped()
-	{
-		Bedoved::enableErrorConversion(E_ERROR);
-		@Bedoved::errorHandler(E_ERROR, 'Foo', 'bar.php', 123);
-	}
+    /**
+     * @covers Bedoved::errorHandler
+     */
+    public function testErrorHandlerAtEscaped()
+    {
+        $b = new Bedoved();
+        $b->enableErrorConversion(E_ERROR);
+        @$b->errorHandler(E_ERROR, 'Foo', 'bar.php', 123);
+    }
 
-	/**
-	 * @covers Bedoved::errorHandler
-	 */
-	public function test_errorHandler_masked()
-	{
-		Bedoved::enableErrorConversion(E_ERROR);
-		Bedoved::errorHandler(E_NOTICE, 'Foo', 'bar.php', 123);
-	}
+    /**
+     * @covers Bedoved::errorHandler
+     */
+    public function testErrorHandlerMasked()
+    {
+        $b = new Bedoved();
+        $b->enableErrorConversion(E_ERROR);
+        $b->errorHandler(E_NOTICE, 'Foo', 'bar.php', 123);
+    }
 
-	/**
-	 * @covers Bedoved::fatalErrorHandler
-	 */
-	public function test_fatalErrorHandler()
-	{
-		$mask = new ReflectionProperty('Bedoved', 'fatalErrorHandler');
-		$mask->setAccessible(true);
-		$mask->setValue('Bedoved', function ($errtype, $errstr, $errfile, $errline, $output)
-			{
-				return "$errtype|$errstr|$errfile|$errline|$output";
-			}
-		);
+    /**
+     * @covers Bedoved::fatalErrorHandler
+     */
+    public function testFatalErrorHandler()
+    {
+        $b = new Bedoved();
+        $marker = new ReflectionProperty('Bedoved', 'errorMarker');
+        $marker->setAccessible(true);
+        $marker->setValue($b, '1234');
+        $mask = new ReflectionProperty('Bedoved', 'fatalErrorHandler');
+        $mask->setAccessible(true);
+        $mask->setValue($b,
+            function (ErrorException $e, $output)
+            {
+                return "{$e->getSeverity()}|{$e->getMessage()}|{$e->getFile()}|"
+                    . "{$e->getLine()}|$output";
+            }
+        );
 
-		$this->assertFalse(Bedoved::fatalErrorHandler('foo'));
+        $this->assertFalse($b->fatalErrorHandler('foo'));
 
-		$text = 'Fatal error: Foo in bar.php on line 123';
-		$this->assertEquals('Fatal|Foo|bar.php|123|' . $text, Bedoved::fatalErrorHandler($text));
-	}
+        $text = 'Fatal error: Foo in bar.php on line 123 [1234]';
+        $this->assertEquals('1|Foo|bar.php|123|' . $text, $b->fatalErrorHandler($text));
+    }
 }
+
