@@ -1,0 +1,14 @@
+{
+    "name" : "mekras/bedoved",
+    "type" : "library",
+    "description" : "Easy error handling",
+    "license" : "Apache-2.0",
+    "require" :
+    {
+        "php": ">=5.1.0"
+    },
+    "autoload":
+    {
+        "classmap": ["src/Bedoved.php"]
+    }
+}
