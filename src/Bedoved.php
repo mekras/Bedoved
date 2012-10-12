@@ -283,7 +283,7 @@ class Bedoved
          * $errorTokens истинна.
          */
         if ($errorTokens &&
-            preg_match('/(parse|fatal) error:(.+) in (.+) on line (\d+)\s+Call Stack.*\s\['
+            preg_match('/(parse|fatal) error:(.+) in (.+) on line (\d+)\s+(Call Stack.*\s)?\['
                 . $this->errorMarker . '\]/is', $output, $m))
         {
             $errtype = $m[1];
