@@ -337,6 +337,11 @@ class Bedoved
         /* Отправляем по e-mail */
         if ($this->notify)
         {
+            $message .= "\n";
+            @$message .= 'URI: ' . $_SERVER['REQUEST_URI'] . "\n";
+            @$message .= 'Host: ' . gethostbyaddr($_SERVER['REMOTE_ADDR']) . "\n";
+            @$message .= 'Agent: ' . $_SERVER['HTTP_USER_AGENT'] . "\n";
+
             $subject = '[Bedoved] Error on ';
             $subject .= isset($_SERVER['HTTP_HOST'])
                 ? substr($_SERVER['HTTP_HOST'], 0, 4) == 'www.'
