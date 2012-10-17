@@ -123,7 +123,7 @@ class Bedoved
 
         $this->enableExceptionHandling = true;
 
-        set_exception_handler(array(__CLASS__, 'exceptionHandler'));
+        set_exception_handler(array($this, 'exceptionHandler'));
     }
 
     /**
