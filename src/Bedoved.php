@@ -50,13 +50,13 @@ class Bedoved
      * Состояние перехвата исключительных ситуаций
      * @var bool
      */
-    private $enableExceptionHandling = false;
+    private $exceptionHandlingEnabled = false;
 
     /**
      * Состояние перехвата фатальных ошибок
      * @var bool
      */
-    private $enableFatalErrorHandling = false;
+    private $fatalErrorHandlingEnabled = false;
 
     /**
      * Адреса e-mail для отправки извещений об ошибках
@@ -93,6 +93,8 @@ class Bedoved
      * По умолчанию $mask включает в себя все ошибки кроме E_STRICT, E_NOTICE и E_USER_NOTICE.
      *
      * @param int $mask  битовая маска, задающая какие ошибки преобразовывать
+     *
+     * @return $this
      */
     public function enableErrorConversion($mask = null)
     {
@@ -106,6 +108,8 @@ class Bedoved
         }
         $this->errorConversionMask = $mask;
         set_error_handler(array($this, 'errorHandler'));
+
+        return $this;
     }
 
     /**
@@ -113,17 +117,18 @@ class Bedoved
      *
      * Вы можете указать файл, который надо вывести при возникновении такой ситуации, с помощью
      * метода {@link setMessageFile()}.
+     *
+     * @return $this
      */
     public function enableExceptionHandling()
     {
-        if ($this->enableExceptionHandling)
+        if (!$this->exceptionHandlingEnabled)
         {
-            return;
+            $this->exceptionHandlingEnabled = true;
+            set_exception_handler(array($this, 'exceptionHandler'));
         }
 
-        $this->enableExceptionHandling = true;
-
-        set_exception_handler(array($this, 'exceptionHandler'));
+        return $this;
     }
 
     /**
@@ -133,52 +138,48 @@ class Bedoved
      * 1. резервирует в памяти буфер, освобождаемый для обработки ошибок нехватки памяти;
      * 2. отключает HTML-оформление стандартных сообщений об ошибках;
      *
-     * @return boolean  true, если перехват включен и false если не удалось это сделать
+     * @return $this
      */
     public function enableFatalErrorHandling()
     {
-        if ($this->enableFatalErrorHandling)
+        if (!$this->fatalErrorHandlingEnabled)
         {
-            return true;
+            $this->fatalErrorHandlingEnabled = true;
+
+            /*
+             * В PHP нет стандартных методов для перехвата некоторых типов ошибок (например E_PARSE или
+             * E_ERROR), однако способ всё же есть — зарегистрировать функцию через ob_start.
+             * Но только не в режиме CLI.
+             */
+            // Резервируем буфер на случай переполнения памяти
+            $GLOBALS['BEDOVED_MEMORY_OVERFLOW_BUFFER'] =
+                str_repeat('x', self::MEMORY_OVERFLOW_BUFFER_SIZE * 1024);
+
+            /* Задаём маркер, чтобы отличать реальные ошибки от текстовых сообщений */
+            $this->errorMarker = uniqid();
+            ini_set('error_append_string', '[' . $this->errorMarker . ']');
+            // Необходимо для правильного определения фатальных ошибок
+            ini_set('html_errors', 0);
+
+            ob_start(array($this, 'fatalErrorHandler'), 4096);
         }
-
-        /*if (PHP_SAPI == 'cli')
-        {
-            return false;
-        }*/
-
-        $this->enableFatalErrorHandling = true;
-
-        /*
-         * В PHP нет стандартных методов для перехвата некоторых типов ошибок (например E_PARSE или
-         * E_ERROR), однако способ всё же есть — зарегистрировать функцию через ob_start.
-         * Но только не в режиме CLI.
-         */
-        // Резервируем буфер на случай переполнения памяти
-        $GLOBALS['BEDOVED_MEMORY_OVERFLOW_BUFFER'] =
-            str_repeat('x', self::MEMORY_OVERFLOW_BUFFER_SIZE * 1024);
-
-        /* Задаём маркер, чтобы отличать реальные ошибки от текстовых сообщений */
-        $this->errorMarker = uniqid();
-        ini_set('error_append_string', '[' . $this->errorMarker . ']');
-        // Необходимо для правильного определения фатальных ошибок
-        ini_set('html_errors', 0);
-
-        ob_start(array($this, 'fatalErrorHandler'), 4096);
-
-        return true;
+        return $this;
     }
 
     /**
      * Задаёт адрес (или адреса через запятую) куда будут отправляться сообщения об ошибках
      *
      * @param string $emails
+     *
+     * @return $this
      */
     public function setNotifyEmails($emails)
     {
         assert('is_string($emails)');
 
         $this->notify = $emails;
+
+        return $this;
     }
 
     /**
@@ -187,6 +188,8 @@ class Bedoved
      * Если файл не существует, будет сделано предупреждение E_USER_WARNING.
      *
      * @param string $filename  путь к файлу
+     *
+     * @return $this
      */
     public function setMessageFile($filename)
     {
@@ -201,6 +204,7 @@ class Bedoved
         {
             trigger_error('File not found: ' . $filename, E_USER_WARNING);
         }
+        return $this;
     }
 
     /**
@@ -210,17 +214,16 @@ class Bedoved
      *
      * @param callable $callback  обработчик фатальных ошибок
      *
-     * @return boolean  true в случае успешного выполнения и false в случае ошибки
+     * @return $this
      */
     public function setFatalErrorHandler($callback)
     {
-        if (!is_callable($callback))
+        if (is_callable($callback))
         {
-            return false;
+            $this->fatalErrorHandler = $callback;
+            $this->enableFatalErrorHandling();
         }
-
-        $this->fatalErrorHandler = $callback;
-        return $this->enableFatalErrorHandling();
+        return $this;
     }
 
     /**
@@ -381,3 +384,4 @@ class Bedoved
         return null;
     }
 }
+
