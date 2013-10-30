@@ -86,7 +86,6 @@ class Bedoved
      */
     private $errorMarker;
 
-
     /**
      * Включает преобразование ошибок в исключения
      *
@@ -125,7 +124,7 @@ class Bedoved
         if (!$this->exceptionHandlingEnabled)
         {
             $this->exceptionHandlingEnabled = true;
-            set_exception_handler(array($this, 'exceptionHandler'));
+            set_exception_handler(array($this, 'handleException'));
         }
 
         return $this;
@@ -301,7 +300,7 @@ class Bedoved
             }
             else
             {
-                return $this->exceptionHandler($e, true);
+                return $this->handleException($e, true);
             }
         }
         $GLOBALS['BEDOVED_MEMORY_OVERFLOW_BUFFER'] =
@@ -317,9 +316,9 @@ class Bedoved
      * @param Exception $e
      * @param bool      $return  true чтобы вернуть сообщение вместо вывода
      *
-     * @return void|string
+     * @return null|string
      */
-    public function exceptionHandler(Exception $e, $return = false)
+    public function handleException(Exception $e, $return = false)
     {
         /*
          * Сообщение для администратора
@@ -354,34 +353,44 @@ class Bedoved
             mail($this->notify, $subject, $message);
         }
 
-        /*
-         * Сообщение для пользователя
-         */
-
-        $httpError = 'Internal Server Error';
-        if (!headers_sent())
-        {
-            header($httpError, true, 500);
-        }
-
-        $message = false;
-        if (@file_exists($this->messageFile) && @is_readable($this->messageFile))
-        {
-            @$message = file_get_contents($this->messageFile);
-        }
-
-        if (!$message)
-        {
-            $message = "<!doctype html>\n<html><head><title>$httpError</title></head>\n" .
-                "<body><h1>$httpError</h1></body></html>";
-        }
+        $message = $this->getUserNotification();
 
         if ($return)
         {
             return $message;
         }
+
+        if (!headers_sent())
+        {
+            header('Internal Server Error', true, 500);
+        }
         echo $message;
         return null;
+    }
+
+    /**
+     * Возвращает сообщение об ошибке для пользователя
+     *
+     * @return bool|string
+     *
+     * @since 1.2.0
+     */
+    private function getUserNotification()
+    {
+        $message = false;
+        $messageFile = $this->messageFile ?: __DIR__ . '/Resources/FatalError.html';
+        if (@file_exists($messageFile) && @is_readable($messageFile))
+        {
+            @$message = file_get_contents($messageFile);
+        }
+
+        if (!$message)
+        {
+            $message =
+                "<!doctype html>\n<html><head><title>Internal Server Error</title></head>\n" .
+                "<body><h1>Internal Server Error</h1></body></html>";
+        }
+        return $message;
     }
 }
 
