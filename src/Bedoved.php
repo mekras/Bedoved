@@ -295,8 +295,8 @@ class Bedoved
 
         /* Предварительная проверка без использования медленных регулярных выражений */
         $errorTokens =
-            stripos($output, 'fatal error') !== false ||
-            stripos($output, 'parse error') !== false;
+            strpos($output, 'Fatal error:') !== false ||
+            strpos($output, 'Parse error:') !== false;
 
         /*
          * Окончательная проверка. Регулярные выражения будут применены только если переменная
@@ -402,9 +402,7 @@ class Bedoved
         $message = false;
         if ($this->debug)
         {
-            ob_start();
-            require __DIR__ . '/Resources/Debug.html.php';
-            $message = ob_get_clean();
+            $message = require __DIR__ . '/Resources/Debug.html.php';
         }
         else
         {

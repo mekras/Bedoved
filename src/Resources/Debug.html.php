@@ -1,8 +1,41 @@
-<!DOCTYPE html>
+<?php
+
+define('LINE_LIMIT', 15);
+
+$lines = file($e->getFile());
+$firstLine = $e->getLine() < LINE_LIMIT ? 0 : $e->getLine() - LINE_LIMIT;
+$lastLine = $firstLine + LINE_LIMIT < count($lines)
+    ? $firstLine + LINE_LIMIT
+    : count($lines);
+$code = '';
+
+$doHighlight = count(ob_get_status()) == 0;
+
+for ($i = $firstLine; $i < $lastLine; $i++)
+{
+    $s = $lines[$i];
+    if ($doHighlight)
+    {
+        $s = highlight_string('<?php' . $s, true);
+        $s = preg_replace('/&lt;\?php/', '', $s, 1);
+    }
+    else
+    {
+        $s = '<pre>' . $s . '</pre>';
+    }
+    if ($i == $e->getLine() - 1)
+    {
+        $s = preg_replace('/(<\w+)/', '$1 class="error-line"', $s);
+    }
+    $code .= $s;
+}
+
+
+return '<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title><?php echo get_class($e); ?></title>
+    <title>' . get_class($e) . '</title>
     <style>
         html,
         body
@@ -59,6 +92,11 @@
             margin: 1em 0 .5em;
         }
 
+        pre
+        {
+            margin: 0;
+        }
+
         .location
         {
             font-family: monospace;
@@ -93,45 +131,24 @@
 </head>
 <body>
     <header>
-        <h1><?php echo get_class($e); ?></h1>
+        <h1>' . get_class($e) . '</h1>
     </header>
 
     <article>
-        <h1><?php echo $e->getMessage();?></h1>
+        <h1>' . $e->getMessage() . '</h1>
 
         <section>
             <h1>Место возникновения ошибки</h1>
-            <div class="location">
-                <?php echo $e->getFile();?>:
-                <?php echo $e->getLine();?>
-            </div>
-            <div class="code">
-                <?php
-                define('LINES', 15);
-                $lines = file($e->getFile());
-                $firstLine = $e->getLine() < LINES ? 0 : $e->getLine() - LINES;
-                $lastLine = $firstLine + LINES < count($lines)
-                    ? $firstLine + LINES
-                    : count($lines);
-                for ($i = $firstLine; $i < $lastLine; $i++)
-                {
-                    $s = highlight_string('<?php' . $lines[$i], true);
-                    $s = preg_replace('/&lt;\?php/', '', $s, 1);
-                    if ($i == $e->getLine() - 1)
-                    {
-                        $s = preg_replace('/(<\w+)/', '$1 class="error-line"', $s);
-                    }
-                    echo $s;
-                }
-                ?>
-            </div>
+            <div class="location">' . $e->getFile() . ': ' . $e->getLine() . '</div>
+            <div class="code">' . $code . '</div>
         </section>
 
         <section>
             <h1>Стек вызовов</h1>
-            <pre class="trace"><?php echo $e->getTraceAsString();?></pre>
+            <pre class="trace">' . $e->getTraceAsString() . '</pre>
         </section>
 
     </article>
 </body>
-</html>
+</html>';
+
