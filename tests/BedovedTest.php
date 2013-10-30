@@ -124,7 +124,7 @@ class BedovedTest extends PHPUnit_Framework_TestCase
         $getUserNotification = new ReflectionMethod('Bedoved', 'getUserNotification');
         $getUserNotification->setAccessible(true);
         $bedoved = new Bedoved();
-        $message = $getUserNotification->invoke($bedoved);
+        $message = $getUserNotification->invoke($bedoved, new Exception());
         $this->assertContains('Fatal error!', $message);
     }
 }

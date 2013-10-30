@@ -40,6 +40,14 @@ class Bedoved
     const MEMORY_OVERFLOW_BUFFER_SIZE = 64;
 
     /**
+     * Режим отладки
+     * @var bool
+     *
+     * @since 1.2.0
+     */
+    private $debug;
+
+    /**
      * Битовая маска, определяющая какие ошибки, будут превращены в исключения
      *
      * @var int
@@ -85,6 +93,16 @@ class Bedoved
      * @var string
      */
     private $errorMarker;
+
+    /**
+     * Инициализирует Бедоведа
+     *
+     * @param bool $debug  true — включить режим отладки
+     */
+    public function __construct($debug = false)
+    {
+        $this->debug = $debug;
+    }
 
     /**
      * Включает преобразование ошибок в исключения
@@ -337,7 +355,7 @@ class Bedoved
         error_log($message);
 
         /* Отправляем по e-mail */
-        if ($this->notify)
+        if ($this->notify && false === $this->debug)
         {
             $message .= "\n";
             @$message .= 'URI: ' . $_SERVER['REQUEST_URI'] . "\n";
@@ -353,7 +371,7 @@ class Bedoved
             mail($this->notify, $subject, $message);
         }
 
-        $message = $this->getUserNotification();
+        $message = $this->getUserNotification($e);
 
         if ($return)
         {
@@ -371,24 +389,37 @@ class Bedoved
     /**
      * Возвращает сообщение об ошибке для пользователя
      *
+     * @param Exception $e
+     *
      * @return bool|string
      *
      * @since 1.2.0
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameters)
      */
-    private function getUserNotification()
+    private function getUserNotification(Exception $e)
     {
         $message = false;
-        $messageFile = $this->messageFile ?: __DIR__ . '/Resources/FatalError.html';
-        if (@file_exists($messageFile) && @is_readable($messageFile))
+        if ($this->debug)
         {
-            @$message = file_get_contents($messageFile);
+            ob_start();
+            require __DIR__ . '/Resources/Debug.html.php';
+            $message = ob_get_clean();
         }
-
-        if (!$message)
+        else
         {
-            $message =
-                "<!doctype html>\n<html><head><title>Internal Server Error</title></head>\n" .
-                "<body><h1>Internal Server Error</h1></body></html>";
+            $messageFile = $this->messageFile ?: __DIR__ . '/Resources/FatalError.html';
+            if (@file_exists($messageFile) && @is_readable($messageFile))
+            {
+                @$message = file_get_contents($messageFile);
+            }
+
+            if (!$message)
+            {
+                $message =
+                    "<!doctype html>\n<html><head><title>Internal Server Error</title></head>\n" .
+                    "<body><h1>Internal Server Error</h1></body></html>";
+            }
         }
         return $message;
     }
