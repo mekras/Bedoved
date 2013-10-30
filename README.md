@@ -89,12 +89,12 @@ catch (ErrorException $e)
 ```php
 require 'Bedoved.php';
 $bedoved = new Bedoved()
-$bedoved->enableErrorConversion();
-$bedoved->enableExceptionHandling();
-$bedoved->enableFatalErrorHandling();
-
-$bedoved->setNotifyEmails('admin@example.org');
-$bedoved->setMessageFile('/path/to/file.html');
+$bedoved
+    ->enableErrorConversion()
+    ->enableExceptionHandling()
+    ->enableFatalErrorHandling()
+    ->setNotifyEmails('admin@example.org')
+    ->setMessageFile('/path/to/file.html');
 ```
 
 Метод `setNotifyEmails` позволяет задать список адресов e-mail (одной строкой через запятую), на
