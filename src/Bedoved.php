@@ -2,10 +2,10 @@
 /**
  * Бедовед
  *
- * @version 0.1
- * @copyright Михаил Красильников <mihalych@vsepofigu.ru>
+ * @version 1.2.0
+ * @copyright Михаил Красильников <m.krasilnikov@yandex.ru>
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
- * @author Михаил Красильников <mihalych@vsepofigu.ru>
+ * @author Михаил Красильников <m.krasilnikov@yandex.ru>
  *
  * Copyright 2012 Mikhail Krasilnikov (Михаил Красильников).
  *
