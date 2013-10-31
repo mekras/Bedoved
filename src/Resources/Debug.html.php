@@ -9,12 +9,12 @@ $lastLine = $firstLine + LINE_LIMIT < count($lines)
     : count($lines);
 $code = '';
 
-$doHighlight = count(ob_get_status()) == 0;
+$isNormalMode = current(current($e->getTrace())) != 'fatalErrorHandler';
 
 for ($i = $firstLine; $i < $lastLine; $i++)
 {
     $s = $lines[$i];
-    if ($doHighlight)
+    if ($isNormalMode)
     {
         $s = highlight_string('<?php' . $s, true);
         $s = preg_replace('/&lt;\?php/', '', $s, 1);
@@ -143,10 +143,10 @@ return '<!DOCTYPE html>
             <div class="code">' . $code . '</div>
         </section>
 
-        <section>
+        ' . ($isNormalMode ? '<section>
             <h1>Стек вызовов</h1>
             <pre class="trace">' . $e->getTraceAsString() . '</pre>
-        </section>
+        </section>' : '') . '
 
     </article>
 </body>
