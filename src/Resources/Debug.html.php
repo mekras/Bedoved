@@ -21,7 +21,7 @@ for ($i = $firstLine; $i < $lastLine; $i++)
     }
     else
     {
-        $s = '<pre>' . $s . '</pre>';
+        $s = '<pre>' . htmlspecialchars($s) . '</pre>';
     }
     if ($i == $e->getLine() - 1)
     {
