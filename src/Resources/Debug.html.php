@@ -40,91 +40,96 @@ return '<!DOCTYPE html>
         html,
         body
         {
-            font-family: monospace;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            width: 100%;
+            background: #fff !important;
+            color: #000 !important;
+            font-family: monospace !important;
+            font-size: 12px !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
         }
 
         header
         {
-            background-color: #a00;
+            background: #a00 !important;
             box-shadow: 0 .1em .2em #000;
-            color: #fff;
-            font-size: 1em;
-            margin: 0;
-            padding: .5em 1em;
+            font-size: 1em !important;
+            margin: 0 !important;
+            padding: .5em 1em !important;
         }
 
         header > h1
         {
-            margin: 0;
+            color: #fff !important;
+            margin: 0 !important;
         }
 
         h1
         {
-            font-size: 1.5em;
-            margin: 1em 0 .5em;
-            padding: 0;
+            background: transparent !important;
+            color: #000 !important;
+            font-size: 1.5em !important;
+            margin: 1em 0 .5em !important;
+            padding: 0 !important;
         }
 
         article
         {
-            padding: 1em;
+            padding: 1em !important;
         }
 
         article > h1
         {
-            border-bottom: dashed 1px;
-            margin: 0;
-            padding-bottom: .5em;
+            border-bottom: dashed 1px !important;
+            margin: 0 !important;
+            padding-bottom: .5em !important;
         }
 
         section
         {
-            margin: 1em 0 .5em;
+            margin: 1em 0 .5em !important;
         }
 
         section > h1
         {
-            font-size: 1.2em;
-            margin: 1em 0 .5em;
+            font-size: 1.2em !important;
+            margin: 1em 0 .5em !important;
         }
 
         pre
         {
-            margin: 0;
+            margin: 0 !important;
         }
 
         .location
         {
-            font-family: monospace;
-            margin: 1em 0;
+            font-family: monospace !important;
+            margin: 1em 0 !important;
         }
 
         .code,
         .trace
         {
-            border: solid 1px #888;
-            margin: 0 0 1em;
-            overflow-x: scroll;
-            padding: .5em 0;
+            border: solid 1px #888 !important;
+            margin: 0 0 1em !important;
+            overflow-x: scroll !important;
+            padding: .5em 0 !important;
         }
 
         .code code
         {
-            display: block;
+            display: block !important;
         }
 
         .code .error-line
         {
-            background-color: #faa;
+            background-color: #faa !important;
         }
 
         .trace
         {
-            padding: .5em 1em;
+            padding: .5em 1em !important;
         }
 
     </style>
