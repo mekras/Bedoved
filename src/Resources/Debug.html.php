@@ -30,6 +30,14 @@ for ($i = $firstLine; $i < $lastLine; $i++)
     $code .= $s;
 }
 
+if ($isNormalMode)
+{
+    $backtrace = htmlspecialchars($e->getTraceAsString());
+}
+else
+{
+    $backtrace = '';
+}
 
 return '<!DOCTYPE html>
 <html>
@@ -135,7 +143,7 @@ return '<!DOCTYPE html>
     </style>
 </head>
 <body>
-    <header>
+    <header id="bv-header">
         <h1>' . get_class($e) . '</h1>
     </header>
 
@@ -150,10 +158,30 @@ return '<!DOCTYPE html>
 
         ' . ($isNormalMode ? '<section>
             <h1>Стек вызовов</h1>
-            <pre class="trace">' . $e->getTraceAsString() . '</pre>
+            <pre class="trace">' . $backtrace . '</pre>
         </section>' : '') . '
 
     </article>
+
+    <script>
+        var parentNode = document.getElementById("bv-header").parentNode;
+        if (parentNode.tagName.toLowerCase() != "body")
+        {
+            var realBody = parentNode;
+            while (realBody.tagName.toLowerCase() != "body")
+            {
+                realBody = realBody.parentNode;
+            }
+            while (parentNode.children.length > 0)
+            {
+                realBody.appendChild(parentNode.children.item(0));
+            }
+            while (realBody.children.item(0).tagName.toLowerCase() != "meta")
+            {
+                realBody.children.item(0).remove();
+            }
+        }
+    </script>
 </body>
 </html>';
 
