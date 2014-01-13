@@ -87,14 +87,13 @@ catch (ErrorException $e)
 действия: отправку извещения по почте и показ файла.
 
 ```php
-require 'Bedoved.php';
-$bedoved = new Bedoved()
-$bedoved->enableErrorConversion();
-$bedoved->enableExceptionHandling();
-$bedoved->enableFatalErrorHandling();
-
-$bedoved->setNotifyEmails('admin@example.org');
-$bedoved->setMessageFile('/path/to/file.html');
+$bedoved = new Bedoved();
+$bedoved
+    ->enableErrorConversion()
+    ->enableExceptionHandling()
+    ->enableFatalErrorHandling()
+    ->setNotifyEmails('admin@example.org')
+    ->setMessageFile('/path/to/file.html');
 ```
 
 Метод `setNotifyEmails` позволяет задать список адресов e-mail (одной строкой через запятую), на
@@ -105,6 +104,21 @@ $bedoved->setMessageFile('/path/to/file.html');
 
 Метод `setMessageFile` позволяет задать файл, содержимое которого будет показано в случае
 возникновения ошибки.
+
+Режим отладки
+-------------
+
+В версии 1.2.0 добавлен режим отладки, в котором:
+
+* сообщения по e-mail не отсылаются;
+* игнорируется зачение, заданное методом `setMessageFile()`
+* в браузер выводится подробное описание ошибки.
+
+Чтобы включить режим отладки, надо передать в конструкторе первым аргументом `true`:
+
+```php
+$bedoved = new Bedoved(true);
+```
 
 Замечания
 ---------

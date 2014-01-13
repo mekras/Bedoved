@@ -26,7 +26,7 @@
 
 require_once __DIR__ . '/../src/Bedoved.php';
 
-class Bedoved_Test extends PHPUnit_Framework_TestCase
+class BedovedTest extends PHPUnit_Framework_TestCase
 {
     protected function tearDown()
     {
@@ -114,6 +114,18 @@ class Bedoved_Test extends PHPUnit_Framework_TestCase
 
         $text = 'Fatal error: Foo in bar.php on line 123 [1234]';
         $this->assertEquals('1|Foo|bar.php|123|' . $text, $b->fatalErrorHandler($text));
+    }
+
+    /**
+     * @covers Bedoved::getUserNotification
+     */
+    public function testGetUserNotification()
+    {
+        $getUserNotification = new ReflectionMethod('Bedoved', 'getUserNotification');
+        $getUserNotification->setAccessible(true);
+        $bedoved = new Bedoved();
+        $message = $getUserNotification->invoke($bedoved, new Exception());
+        $this->assertContains('Fatal error!', $message);
     }
 }
 
