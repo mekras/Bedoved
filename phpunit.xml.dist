@@ -2,13 +2,13 @@
 <phpunit>
 	<filter>
 		<whitelist addUncoveredFilesFromWhitelist="true">
-			<directory suffix=".php">../src</directory>
+			<directory suffix=".php">src</directory>
 		</whitelist>
 	</filter>
 
 	<testsuites>
 		<testsuite name="All tests">
-			<directory suffix="Test.php">.</directory>
+			<directory suffix="Test.php">tests</directory>
 		</testsuite>
 	</testsuites>
 
