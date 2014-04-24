@@ -1,11 +1,22 @@
 {
     "name" : "mekras/bedoved",
-    "type" : "library",
     "description" : "Easy error handling",
+    "type" : "library",
     "license" : "Apache-2.0",
+    "authors": [
+        {
+            "name": "Михаил Красильников",
+            "email": "m.krasilnikov@yandex.ru"
+        }
+    ],
     "require" :
     {
         "php": ">=5.1.0"
+    },
+    "require-dev":
+    {
+        "ext-xdebug": "*",
+        "satooshi/php-coveralls": "dev-master"
     },
     "autoload":
     {

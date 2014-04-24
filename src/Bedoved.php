@@ -2,10 +2,10 @@
 /**
  * Бедовед
  *
- * @version 1.2.0
+ * @version   1.2.0
  * @copyright Михаил Красильников <m.krasilnikov@yandex.ru>
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
- * @author Михаил Красильников <m.krasilnikov@yandex.ru>
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
+ * @author    Михаил Красильников <m.krasilnikov@yandex.ru>
  *
  * Copyright 2012 Mikhail Krasilnikov (Михаил Красильников).
  *
@@ -21,7 +21,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @package Bedoved
+ * @package   Bedoved
  */
 
 
@@ -41,6 +41,7 @@ class Bedoved
 
     /**
      * Режим отладки
+     *
      * @var bool
      *
      * @since 1.2.0
@@ -56,18 +57,21 @@ class Bedoved
 
     /**
      * Состояние перехвата исключительных ситуаций
+     *
      * @var bool
      */
     private $exceptionHandlingEnabled = false;
 
     /**
      * Состояние перехвата фатальных ошибок
+     *
      * @var bool
      */
     private $fatalErrorHandlingEnabled = false;
 
     /**
      * Адреса e-mail для отправки извещений об ошибках
+     *
      * @var null|string
      */
     private $notify = null;
@@ -95,9 +99,17 @@ class Bedoved
     private $errorMarker;
 
     /**
+     * Регулярное выражение, соответствующее сообщениям об ошибках
+     *
+     * @var string
+     * @since x.xx
+     */
+    private $errorPattern;
+
+    /**
      * Инициализирует Бедоведа
      *
-     * @param bool $debug  true — включить режим отладки
+     * @param bool $debug true — включить режим отладки
      */
     public function __construct($debug = false)
     {
@@ -109,7 +121,7 @@ class Bedoved
      *
      * По умолчанию $mask включает в себя все ошибки кроме E_STRICT, E_NOTICE и E_USER_NOTICE.
      *
-     * @param int $mask  битовая маска, задающая какие ошибки преобразовывать
+     * @param int $mask битовая маска, задающая какие ошибки преобразовывать
      *
      * @return $this
      */
@@ -175,6 +187,10 @@ class Bedoved
             /* Задаём маркер, чтобы отличать реальные ошибки от текстовых сообщений */
             $this->errorMarker = uniqid();
             ini_set('error_append_string', '[' . $this->errorMarker . ']');
+            $this->errorPattern
+                = '/(Parse|Fatal) error:(.+) in (.+) on line (\d+)\s+(Call Stack.*\s)?\['
+                . $this->errorMarker . '\]/s';
+
             // Необходимо для правильного определения фатальных ошибок
             ini_set('html_errors', 0);
 
@@ -204,7 +220,7 @@ class Bedoved
      *
      * Если файл не существует, будет сделано предупреждение E_USER_WARNING.
      *
-     * @param string $filename  путь к файлу
+     * @param string $filename путь к файлу
      *
      * @return $this
      */
@@ -229,7 +245,7 @@ class Bedoved
      *
      * Автоматически вызывает метод {@link enableFatalErrorHandling()}.
      *
-     * @param callable $callback  обработчик фатальных ошибок
+     * @param callable $callback обработчик фатальных ошибок
      *
      * @return $this
      */
@@ -253,10 +269,10 @@ class Bedoved
      * Примечание: На самом деле этот метод обрабатывает только E_STRICT, E_NOTICE, E_USER_NOTICE,
      * E_WARNING, E_USER_WARNING и E_USER_ERROR.
      *
-     * @param int    $errno    тип ошибки
-     * @param string $errstr   описание ошибки
-     * @param string $errfile  имя файла, в котором произошла ошибка
-     * @param int    $errline  строка, где произошла ошибка
+     * @param int    $errno   тип ошибки
+     * @param string $errstr  описание ошибки
+     * @param string $errfile имя файла, в котором произошла ошибка
+     * @param int    $errline строка, где произошла ошибка
      *
      * @throws ErrorException
      *
@@ -284,7 +300,7 @@ class Bedoved
      * своей работы буфер в памяти для отлова ошибок переполнения памяти. Эти операции замедляют
      * вывод примерно на 1-2%.
      *
-     * @param string $output  содержимое буфера вывода
+     * @param string $output содержимое буфера вывода
      *
      * @return string|bool
      */
@@ -302,15 +318,13 @@ class Bedoved
          * Окончательная проверка. Регулярные выражения будут применены только если переменная
          * $errorTokens истинна.
          */
-        if ($errorTokens &&
-            preg_match('/(parse|fatal) error:(.+) in (.+) on line (\d+)\s+(Call Stack.*\s)?\['
-                . $this->errorMarker . '\]/is', $output, $m))
+        if ($errorTokens && @preg_match($this->errorPattern, $output, $m))
         {
             $errtype = $m[1];
             $errstr = trim($m[2]);
             $errfile = trim($m[3]);
             $errline = trim($m[4]);
-            $severity = strcasecmp($errtype, 'parse') == 0 ? E_PARSE : E_ERROR;
+            $severity = 'Parse' == $errtype ? E_PARSE : E_ERROR;
             $e = new ErrorException($errstr, 0, $severity, $errfile, $errline);
             if ($this->fatalErrorHandler)
             {
@@ -332,7 +346,7 @@ class Bedoved
      * Обработчик исключений
      *
      * @param Exception $e
-     * @param bool      $return  true чтобы вернуть сообщение вместо вывода
+     * @param bool      $return true чтобы вернуть сообщение вместо вывода
      *
      * @return null|string
      */
@@ -341,7 +355,6 @@ class Bedoved
         /*
          * Сообщение для администратора
          */
-
         $message = sprintf(
             "%s\n\n%s in %s at %s\n\nBacktrace:\n%s\n",
             $e->getMessage(),
@@ -406,7 +419,7 @@ class Bedoved
         }
         else
         {
-            $messageFile = $this->messageFile ?: __DIR__ . '/Resources/FatalError.html';
+            $messageFile = $this->messageFile ? : __DIR__ . '/Resources/FatalError.html';
             if (@file_exists($messageFile) && @is_readable($messageFile))
             {
                 @$message = file_get_contents($messageFile);
@@ -422,4 +435,3 @@ class Bedoved
         return $message;
     }
 }
-

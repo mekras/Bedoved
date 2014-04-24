@@ -1,6 +1,7 @@
 <?php
 
-require '../src/Bedoved.php';
+require __DIR__ .'/../src/Bedoved.php';
+
 $bedoved = new Bedoved();
 $bedoved->enableErrorConversion();
 
