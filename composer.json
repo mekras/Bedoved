@@ -13,6 +13,11 @@
     {
         "php": ">=5.1.0"
     },
+    "require-dev":
+    {
+        "ext-xdebug": "*",
+        "satooshi/php-coveralls": "dev-master"
+    },
     "autoload":
     {
         "classmap": ["src/Bedoved.php"]
