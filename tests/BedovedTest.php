@@ -2,10 +2,9 @@
 /**
  * Тесты
  *
- * @version 0.1
- * @copyright Михаил Красильников <mihalych@vsepofigu.ru>
+ * @copyright Михаил Красильников <m.krasilnikov@yandex.ru>
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
- * @author Михаил Красильников <mihalych@vsepofigu.ru>
+ * @author Михаил Красильников <m.krasilnikov@yandex.ru>
  *
  * Copyright 2012 Mikhail Krasilnikov (Михаил Красильников).
  *
@@ -26,15 +25,23 @@
 
 require_once __DIR__ . '/../src/Bedoved.php';
 
+/**
+ * Тесты
+ *
+ * @package Bedoved
+ */
 class BedovedTest extends PHPUnit_Framework_TestCase
 {
+    /**
+     *
+     */
     protected function tearDown()
     {
         restore_error_handler();
     }
 
     /**
-     * @covers Bedoved::enableErrorConversion
+     *
      */
     public function testEnableErrorConversion()
     {
@@ -50,7 +57,7 @@ class BedovedTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Bedoved::errorHandler
+     *
      */
     public function testErrorHandler()
     {
@@ -72,7 +79,7 @@ class BedovedTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Bedoved::errorHandler
+     *
      */
     public function testErrorHandlerAtEscaped()
     {
@@ -82,7 +89,7 @@ class BedovedTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Bedoved::errorHandler
+     *
      */
     public function testErrorHandlerMasked()
     {
@@ -92,17 +99,18 @@ class BedovedTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Bedoved::fatalErrorHandler
+     *
      */
     public function testFatalErrorHandler()
     {
         $b = new Bedoved();
+        $b->enableFatalErrorHandling();
         $marker = new ReflectionProperty('Bedoved', 'errorMarker');
         $marker->setAccessible(true);
-        $marker->setValue($b, '1234');
-        $mask = new ReflectionProperty('Bedoved', 'fatalErrorHandler');
-        $mask->setAccessible(true);
-        $mask->setValue($b,
+        $handler = new ReflectionProperty('Bedoved', 'fatalErrorHandler');
+        $handler->setAccessible(true);
+        $handler->setValue(
+            $b,
             function (ErrorException $e, $output)
             {
                 return "{$e->getSeverity()}|{$e->getMessage()}|{$e->getFile()}|"
@@ -112,12 +120,12 @@ class BedovedTest extends PHPUnit_Framework_TestCase
 
         $this->assertFalse($b->fatalErrorHandler('foo'));
 
-        $text = 'Fatal error: Foo in bar.php on line 123 [1234]';
+        $text = 'Fatal error: Foo in bar.php on line 123 [' . $marker->getValue($b) . ']';
         $this->assertEquals('1|Foo|bar.php|123|' . $text, $b->fatalErrorHandler($text));
     }
 
     /**
-     * @covers Bedoved::getUserNotification
+     *
      */
     public function testGetUserNotification()
     {
@@ -128,4 +136,3 @@ class BedovedTest extends PHPUnit_Framework_TestCase
         $this->assertContains('Fatal error!', $message);
     }
 }
-
