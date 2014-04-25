@@ -10,6 +10,7 @@ install:
   - composer install
 
 script:
+ - echo $TRAVIS_PHP_VERSION
  - mkdir -p build/logs
  - phpunit --coverage-clover build/logs/clover.xml
 
