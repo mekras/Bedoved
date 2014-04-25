@@ -102,7 +102,7 @@ class Bedoved
      * Регулярное выражение, соответствующее сообщениям об ошибках
      *
      * @var string
-     * @since x.xx
+     * @since 1.03
      */
     private $errorPattern;
 
