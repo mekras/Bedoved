@@ -3,14 +3,11 @@ php:
     - 5.5
     - 5.4
     - 5.3
-    - 5.2
-    - 5.1
 
 install:
   - composer install
 
 script:
- - echo $TRAVIS_PHP_VERSION
  - mkdir -p build/logs
  - phpunit --coverage-clover build/logs/clover.xml
 
